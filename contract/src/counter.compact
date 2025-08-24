@@ -27,6 +27,8 @@ export sealed ledger Verifiers: Bytes<32>;
 
 export ledger beneficiaries: Map<Bytes<32>, UserInfo>;
 
+export ledger counter: Uint<32>;
+
 witness localSecretKey(): Bytes<32>;
 
 constructor() {
@@ -52,15 +54,22 @@ export circuit grantVerifier(verifier: ZswapCoinPublicKey): [] {
   AccessControl__grantRole(Verifiers, left<ZswapCoinPublicKey, ContractAddress>(verifier));
 }
 
-export circuit addRewards(coin: CoinInfo, rewardsPerBeneficiary: Uint<128>): [] {
+export circuit addRewards(coin: CoinInfo, rewardsPerBeneficiary: Uint<128>, key: Bytes<32>): [] {
   AccessControl_assertOnlyRole(AccessControl_DEFAULT_ADMIN_ROLE);
   receive(disclose(coin));
-  assert coin.amount == rewardsPerBeneficiary * Uint<128>(beneficiaries.size()); // dont know size is ok
+  const totalRewards = rewardsPerBeneficiary; //* beneficiaries.size();
+  assert(coin.value == totalRewards, "Coin amount does not match total rewards"); // dont know size is ok
 
-  for (beneficiary in beneficiaries.keys()) {
-    let userInfo = beneficiaries.lookup(beneficiary);
-    beneficiaries.insert(beneficiary, UserInfo { rewards: userInfo.rewards + disclose(rewardsPerBeneficiary), data: userInfo.data });
-  }
+  const userInfo = beneficiaries.lookup(disclose(key));
+  beneficiaries.insert(disclose(key), UserInfo { rewards: (userInfo.rewards + disclose(rewardsPerBeneficiary) as Uint<128>), data: userInfo.data });
+  // for (const i of 0..10) {
+  //   const beneficiary = keys[i];
+  //   // keys = keys.popFront();
+  //   if (beneficiary != pad(32, "0")) {
+  //     const userInfo = beneficiaries.lookup(beneficiary);
+  //     beneficiaries.insert(beneficiary, UserInfo { rewards: userInfo.rewards + disclose(rewardsPerBeneficiary), data: userInfo.data });
+  //   }
+  // }
 }
 
 

@@ -15,7 +15,7 @@
 
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
-import { type ContractAddress } from '@midnight-ntwrk/compact-runtime';
+import { encodeTokenType, type ContractAddress } from '@midnight-ntwrk/compact-runtime';
 import { Counter, type CounterPrivateState, witnesses } from '@midnight-ntwrk/counter-contract';
 import { type CoinInfo, nativeToken, Transaction, type TransactionId } from '@midnight-ntwrk/ledger';
 import { deployContract, findDeployedContract } from '@midnight-ntwrk/midnight-js-contracts';
@@ -107,6 +107,30 @@ export const deploy = async (
   });
   logger.info(`Deployed contract at address: ${counterContract.deployTxData.public.contractAddress}`);
   return counterContract;
+};
+
+export const addRewards = async (
+  providers: CounterProviders,
+  counterContract: DeployedCounterContract,
+  coinAmount: bigint,
+  rewardsPerBeneficiary: bigint,
+  beneficiary: string,
+): Promise<FinalizedTxData> => {
+  logger.info('Adding rewards...');
+
+  const coinInfo = {
+    color: encodeTokenType(nativeToken()),
+    nonce: randomBytes(32),
+    value: coinAmount,
+  };
+
+  const finalizedTxData = await counterContract.callTx.addRewards(
+    coinInfo,
+    BigInt(rewardsPerBeneficiary),
+    Buffer.from(beneficiary, 'hex'),
+  );
+  logger.info(`Transaction ${finalizedTxData.public.txId} added in block ${finalizedTxData.public.blockHeight}`);
+  return finalizedTxData.public;
 };
 
 export const grantVerifier = async (
