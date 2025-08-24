@@ -41,14 +41,12 @@ Which would you like to do? `;
 
 const MAIN_LOOP_QUESTION = `
 You can do one of the following:
-  1. Increment
-  2. Display current counter value
-  3. Increment 2
-  4. Grant verifier
-  5. Add beneficiary
-  6. Display beneficiary data
-  7. Own Pub key
-  8. Exit
+  1. Display current counter value
+  2. Grant verifier
+  3. Add beneficiary
+  4. Display beneficiary data
+  5. Own Pub key
+  6. Exit
 Which would you like to do? `;
 
 const join = async (providers: CounterProviders, rli: Interface): Promise<DeployedCounterContract> => {
@@ -86,34 +84,28 @@ const mainLoop = async (providers: CounterProviders, rli: Interface): Promise<vo
     const choice = await rli.question(MAIN_LOOP_QUESTION);
     switch (choice) {
       case '1':
-        await api.increment(counterContract);
-        break;
-      case '2':
         await api.displayCounterValue(providers, counterContract);
         break;
-      case '3':
-        await api.increment2(counterContract);
-        break;
-      case '4': {
+      case '2': {
         const verifier = await rli.question('Enter the verifier (in hex): ');
         await api.grantVerifier(counterContract, verifier);
         break;
       }
-      case '5': {
+      case '3': {
         const beneficiary = await rli.question('Enter the beneficiary (in hex): ');
         const data = await rli.question('Enter the data (true/false): ');
         await api.addBeneficiary(counterContract, beneficiary, data === 'true');
         break;
       }
-      case '6':
+      case '4':
         await api.displayBeneficiaryData(providers, counterContract);
         break;
-      case '7': {
+      case '5': {
         const sk = await rli.question('Enter your secret key (in hex): ');
         await api.displayOwnPubKey(sk);
         break;
       }
-      case '8':
+      case '6':
         logger.info('Exiting...');
         return;
       default:

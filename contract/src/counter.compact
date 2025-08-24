@@ -34,21 +34,6 @@ constructor() {
   AccessControl__grantRole(AccessControl_DEFAULT_ADMIN_ROLE, left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey()));
 }
 
-// public state
-export ledger round: Counter;
-
-// transition function changing public state
-export circuit increment(): [] {
-  AccessControl_assertOnlyRole(AccessControl_DEFAULT_ADMIN_ROLE);
-
-  round.increment(1);
-}
-
-export circuit increment2(): [] {
-  AccessControl_assertOnlyRole(Verifiers);
-
-  round.increment(2);
-}
 
 export circuit addBeneficiary(beneficiary: Bytes<32>, data: Boolean): [] {
   AccessControl_assertOnlyRole(Verifiers);

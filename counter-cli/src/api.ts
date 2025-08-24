@@ -59,14 +59,21 @@ globalThis.WebSocket = WebSocket;
 export const getCounterLedgerState = async (
   providers: CounterProviders,
   contractAddress: ContractAddress,
-): Promise<bigint | null> => {
+): Promise<Counter.Ledger | null> => {
   assertIsContractAddress(contractAddress);
   logger.info('Checking contract ledger state...');
-  const state = await providers.publicDataProvider
-    .queryContractState(contractAddress)
-    .then((contractState) => (contractState != null ? Counter.ledger(contractState.data).round : null));
-  logger.info(`Ledger state: ${state}`);
-  return state;
+  const contractState = await providers.publicDataProvider.queryContractState(contractAddress);
+  if (contractState === null) {
+    return null;
+  }
+  const ledger = Counter.ledger(contractState.data);
+  logger.info(`Contract address: ${contractAddress}`);
+  let sells: Map<string, { rewards: bigint; data: boolean }> = new Map();
+  for (const [key, value] of ledger.beneficiaries) {
+    sells.set(toHex(key), value);
+  }
+  logger.info(`Beneficiaries map: ${JSON.stringify(Object.fromEntries(sells))}`);
+  return ledger;
 };
 
 export const counterContractInstance: CounterContract = new Counter.Contract(witnesses);
@@ -100,20 +107,6 @@ export const deploy = async (
   return counterContract;
 };
 
-export const increment = async (counterContract: DeployedCounterContract): Promise<FinalizedTxData> => {
-  logger.info('Incrementing...');
-  const finalizedTxData = await counterContract.callTx.increment();
-  logger.info(`Transaction ${finalizedTxData.public.txId} added in block ${finalizedTxData.public.blockHeight}`);
-  return finalizedTxData.public;
-};
-
-export const increment2 = async (counterContract: DeployedCounterContract): Promise<FinalizedTxData> => {
-  logger.info('Incrementing...');
-  const finalizedTxData = await counterContract.callTx.increment2();
-  logger.info(`Transaction ${finalizedTxData.public.txId} added in block ${finalizedTxData.public.blockHeight}`);
-  return finalizedTxData.public;
-};
-
 export const grantVerifier = async (
   counterContract: DeployedCounterContract,
   verifier: string,
@@ -144,7 +137,7 @@ export const displayBeneficiaryData = async (
   logger.info('Displaying beneficiary data...');
   const beneficiaries = await counterContract.callTx.lookupData();
   for (const [beneficiary, data] of Object.entries(beneficiaries)) {
-    logger.info(`Beneficiary: ${beneficiary}, Data: ${data}`);
+    logger.info(`Beneficiary: ${beneficiary}, Data: ${JSON.stringify(data)}`);
   }
 };
 
@@ -157,15 +150,13 @@ export const displayOwnPubKey = async (sk: string): Promise<void> => {
 export const displayCounterValue = async (
   providers: CounterProviders,
   counterContract: DeployedCounterContract,
-): Promise<{ counterValue: bigint | null; contractAddress: string }> => {
+): Promise<{ ledgerState: Counter.Ledger | null; contractAddress: string }> => {
   const contractAddress = counterContract.deployTxData.public.contractAddress;
-  const counterValue = await getCounterLedgerState(providers, contractAddress);
-  if (counterValue === null) {
+  const ledgerState = await getCounterLedgerState(providers, contractAddress);
+  if (ledgerState === null) {
     logger.info(`There is no counter contract deployed at ${contractAddress}.`);
-  } else {
-    logger.info(`Current counter value: ${Number(counterValue)}`);
   }
-  return { contractAddress, counterValue };
+  return { contractAddress, ledgerState };
 };
 
 export const createWalletAndMidnightProvider = async (wallet: Wallet): Promise<WalletProvider & MidnightProvider> => {
@@ -376,7 +367,9 @@ export const configureProviders = async (wallet: Wallet & Resource, config: Conf
       privateStateStoreName: contractConfig.privateStateStoreName,
     }),
     publicDataProvider: indexerPublicDataProvider(config.indexer, config.indexerWS),
-    zkConfigProvider: new NodeZkConfigProvider<'increment'>(contractConfig.zkConfigPath),
+    zkConfigProvider: new NodeZkConfigProvider<'addBeneficiary' | 'grantVerifier' | 'lookupData'>(
+      contractConfig.zkConfigPath,
+    ),
     proofProvider: httpClientProofProvider(config.proofServer),
     walletProvider: walletAndMidnightProvider,
     midnightProvider: walletAndMidnightProvider,
