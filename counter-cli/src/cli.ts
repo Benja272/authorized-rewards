@@ -22,6 +22,7 @@ import { type StartedDockerComposeEnvironment, type DockerComposeEnvironment } f
 import { type CounterProviders, type DeployedCounterContract } from './common-types';
 import { type Config, StandaloneConfig } from './config';
 import * as api from './api';
+import { randomBytes } from 'node:crypto';
 
 let logger: Logger;
 
@@ -44,20 +45,26 @@ You can do one of the following:
   2. Display current counter value
   3. Increment 2
   4. Grant verifier
-  5. Exit
+  5. Add beneficiary
+  6. Display beneficiary data
+  7. Exit
 Which would you like to do? `;
 
 const join = async (providers: CounterProviders, rli: Interface): Promise<DeployedCounterContract> => {
   const contractAddress = await rli.question('What is the contract address (in hex)? ');
-  return await api.joinContract(providers, contractAddress);
+  const pk = await rli.question('What is your secret key (in hex)? ');
+  return await api.joinContract(providers, contractAddress, pk);
 };
 
 const deployOrJoin = async (providers: CounterProviders, rli: Interface): Promise<DeployedCounterContract | null> => {
   while (true) {
     const choice = await rli.question(DEPLOY_OR_JOIN_QUESTION);
     switch (choice) {
-      case '1':
-        return await api.deploy(providers, { privateCounter: 0 });
+      case '1': {
+        const sk = Buffer.from(randomBytes(32));
+        console.log(`Your secret key (in hex) is: ${sk.toString('hex')}`);
+        return await api.deploy(providers, { secretKey: sk });
+      }
       case '2':
         return await join(providers, rli);
       case '3':
@@ -89,8 +96,18 @@ const mainLoop = async (providers: CounterProviders, rli: Interface): Promise<vo
       case '4': {
         const verifier = await rli.question('Enter the verifier (in hex): ');
         await api.grantVerifier(counterContract, verifier);
+        break;
       }
-      case '5':
+      case '5': {
+        const beneficiary = await rli.question('Enter the beneficiary (in hex): ');
+        const data = await rli.question('Enter the data (true/false): ');
+        await api.addBeneficiary(counterContract, beneficiary, data === 'true');
+        break;
+      }
+      case '6':
+        await api.displayBeneficiaryData(providers, counterContract);
+        break;
+      case '7':
         logger.info('Exiting...');
         return;
       default:

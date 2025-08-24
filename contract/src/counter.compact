@@ -18,10 +18,16 @@ pragma language_version >= 0.16 && <= 0.17;
 import CompactStandardLibrary;
 import "./AccessControl" prefix AccessControl_;
 
+struct UserInfo {
+  rewards: Uint<128>,
+  data: Boolean,
+}
+
 export sealed ledger Verifiers: Bytes<32>;
 
-// export ledger beneficiaries: Map<, Bytes<32>>;
+export ledger beneficiaries: Map<Bytes<32>, UserInfo>;
 
+witness localSecretKey(): Bytes<32>;
 
 constructor() {
   Verifiers = persistentHash<Bytes<32>>(pad(32, "VERIFIERS"));
@@ -44,8 +50,24 @@ export circuit increment2(): [] {
   round.increment(2);
 }
 
+export circuit addBeneficiary(beneficiary: Bytes<32>, data: Boolean): [] {
+  AccessControl_assertOnlyRole(Verifiers);
+  // TODO: Manage when a beneficiary is already in the map
+
+  beneficiaries.insert(disclose(beneficiary), UserInfo { rewards: 0, data: disclose(data) });
+}
+
+export circuit lookupData(): Boolean {
+  return beneficiaries.lookup(disclose(publicKey(localSecretKey()))).data;
+}
+
 export circuit grantVerifier(verifier: ZswapCoinPublicKey): [] {
   AccessControl_assertOnlyRole(AccessControl_DEFAULT_ADMIN_ROLE);
 
   AccessControl__grantRole(Verifiers, left<ZswapCoinPublicKey, ContractAddress>(verifier));
+}
+
+
+export circuit publicKey(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([pad(32, "authorized-rewards:pk:"), sk]);
 }

@@ -74,12 +74,13 @@ export const counterContractInstance: CounterContract = new Counter.Contract(wit
 export const joinContract = async (
   providers: CounterProviders,
   contractAddress: string,
+  pk: string,
 ): Promise<DeployedCounterContract> => {
   const counterContract = await findDeployedContract(providers, {
     contractAddress,
     contract: counterContractInstance,
     privateStateId: 'counterPrivateState',
-    initialPrivateState: { privateCounter: 0 },
+    initialPrivateState: { secretKey: Buffer.from(pk, 'hex') },
   });
   logger.info(`Joined contract at address: ${counterContract.deployTxData.public.contractAddress}`);
   return counterContract;
@@ -122,6 +123,29 @@ export const grantVerifier = async (
   const finalizedTxData = await counterContract.callTx.grantVerifier({ bytes: Buffer.from(verifier, 'hex') });
   logger.info(`Transaction ${finalizedTxData.public.txId} added in block ${finalizedTxData.public.blockHeight}`);
   return finalizedTxData.public;
+};
+
+export const addBeneficiary = async (
+  counterContract: DeployedCounterContract,
+  beneficiary: string,
+  data: boolean,
+): Promise<FinalizedTxData> => {
+  logger.info('Adding beneficiary...');
+
+  const finalizedTxData = await counterContract.callTx.addBeneficiary(Buffer.from(beneficiary, 'hex'), data);
+  logger.info(`Transaction ${finalizedTxData.public.txId} added in block ${finalizedTxData.public.blockHeight}`);
+  return finalizedTxData.public;
+};
+
+export const displayBeneficiaryData = async (
+  providers: CounterProviders,
+  counterContract: DeployedCounterContract,
+): Promise<void> => {
+  logger.info('Displaying beneficiary data...');
+  const beneficiaries = await counterContract.callTx.lookupData();
+  for (const [beneficiary, data] of Object.entries(beneficiaries)) {
+    logger.info(`Beneficiary: ${beneficiary}, Data: ${data}`);
+  }
 };
 
 export const displayCounterValue = async (
