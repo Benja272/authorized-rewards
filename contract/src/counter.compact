@@ -18,10 +18,19 @@ pragma language_version >= 0.16 && <= 0.17;
 import CompactStandardLibrary;
 import "./AccessControl" prefix AccessControl_;
 
+export sealed ledger Government: Bytes<32>;
+
+constructor() {
+  Government = persistentHash<Bytes<32>>(pad(32, "GOVERNMENT"));
+  AccessControl__grantRole(AccessControl_DEFAULT_ADMIN_ROLE, left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey()));
+}
+
 // public state
 export ledger round: Counter;
 
 // transition function changing public state
 export circuit increment(): [] {
+  AccessControl_assertOnlyRole(AccessControl_DEFAULT_ADMIN_ROLE);
+
   round.increment(1);
 }
