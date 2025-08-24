@@ -72,7 +72,9 @@ export const getCounterLedgerState = async (
   for (const [key, value] of ledger.beneficiaries) {
     sells.set(toHex(key), value);
   }
-  logger.info(`Beneficiaries map: ${JSON.stringify(Object.fromEntries(sells))}`);
+  logger.info(
+    `Beneficiaries map: ${JSON.stringify(Object.fromEntries(sells), (_, v) => (typeof v === 'bigint' ? v.toString() : v))}`,
+  );
   return ledger;
 };
 
