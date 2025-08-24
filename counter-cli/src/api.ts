@@ -148,6 +148,12 @@ export const displayBeneficiaryData = async (
   }
 };
 
+export const displayOwnPubKey = async (sk: string): Promise<void> => {
+  logger.info('Displaying own public key...');
+  const pubKey = Counter.pureCircuits.publicKey(Buffer.from(sk, 'hex'));
+  logger.info(`Your public key is: ${Buffer.from(pubKey).toString('hex')}`);
+};
+
 export const displayCounterValue = async (
   providers: CounterProviders,
   counterContract: DeployedCounterContract,

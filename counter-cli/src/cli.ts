@@ -47,6 +47,7 @@ You can do one of the following:
   4. Grant verifier
   5. Add beneficiary
   6. Display beneficiary data
+  7. Own Pub key
   7. Exit
 Which would you like to do? `;
 
@@ -107,7 +108,11 @@ const mainLoop = async (providers: CounterProviders, rli: Interface): Promise<vo
       case '6':
         await api.displayBeneficiaryData(providers, counterContract);
         break;
-      case '7':
+      case '7': {
+        const sk = await rli.question('Enter your secret key (in hex): ');
+        await api.displayOwnPubKey(sk);
+      }
+      case '8':
         logger.info('Exiting...');
         return;
       default:
