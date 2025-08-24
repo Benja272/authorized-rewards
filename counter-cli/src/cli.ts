@@ -48,7 +48,7 @@ You can do one of the following:
   5. Add beneficiary
   6. Display beneficiary data
   7. Own Pub key
-  7. Exit
+  8. Exit
 Which would you like to do? `;
 
 const join = async (providers: CounterProviders, rli: Interface): Promise<DeployedCounterContract> => {
@@ -111,6 +111,7 @@ const mainLoop = async (providers: CounterProviders, rli: Interface): Promise<vo
       case '7': {
         const sk = await rli.question('Enter your secret key (in hex): ');
         await api.displayOwnPubKey(sk);
+        break;
       }
       case '8':
         logger.info('Exiting...');
