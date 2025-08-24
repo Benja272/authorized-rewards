@@ -106,6 +106,24 @@ export const increment = async (counterContract: DeployedCounterContract): Promi
   return finalizedTxData.public;
 };
 
+export const increment2 = async (counterContract: DeployedCounterContract): Promise<FinalizedTxData> => {
+  logger.info('Incrementing...');
+  const finalizedTxData = await counterContract.callTx.increment2();
+  logger.info(`Transaction ${finalizedTxData.public.txId} added in block ${finalizedTxData.public.blockHeight}`);
+  return finalizedTxData.public;
+};
+
+export const grantVerifier = async (
+  counterContract: DeployedCounterContract,
+  verifier: string,
+): Promise<FinalizedTxData> => {
+  logger.info('Granting verifier...');
+
+  const finalizedTxData = await counterContract.callTx.grantVerifier({ bytes: Buffer.from(verifier, 'hex') });
+  logger.info(`Transaction ${finalizedTxData.public.txId} added in block ${finalizedTxData.public.blockHeight}`);
+  return finalizedTxData.public;
+};
+
 export const displayCounterValue = async (
   providers: CounterProviders,
   counterContract: DeployedCounterContract,
@@ -307,6 +325,8 @@ export const buildWalletAndWaitForFunds = async (
     balance = await waitForFunds(wallet);
   }
   logger.info(`Your wallet balance is: ${balance}`);
+  const stateA = await Rx.firstValueFrom(wallet.state());
+  console.log(stateA.coinPublicKeyLegacy);
   return wallet;
 };
 

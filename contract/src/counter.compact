@@ -18,10 +18,13 @@ pragma language_version >= 0.16 && <= 0.17;
 import CompactStandardLibrary;
 import "./AccessControl" prefix AccessControl_;
 
-export sealed ledger Government: Bytes<32>;
+export sealed ledger Verifiers: Bytes<32>;
+
+// export ledger beneficiaries: Map<, Bytes<32>>;
+
 
 constructor() {
-  Government = persistentHash<Bytes<32>>(pad(32, "GOVERNMENT"));
+  Verifiers = persistentHash<Bytes<32>>(pad(32, "VERIFIERS"));
   AccessControl__grantRole(AccessControl_DEFAULT_ADMIN_ROLE, left<ZswapCoinPublicKey, ContractAddress>(ownPublicKey()));
 }
 
@@ -33,4 +36,16 @@ export circuit increment(): [] {
   AccessControl_assertOnlyRole(AccessControl_DEFAULT_ADMIN_ROLE);
 
   round.increment(1);
+}
+
+export circuit increment2(): [] {
+  AccessControl_assertOnlyRole(Verifiers);
+
+  round.increment(2);
+}
+
+export circuit grantVerifier(verifier: ZswapCoinPublicKey): [] {
+  AccessControl_assertOnlyRole(AccessControl_DEFAULT_ADMIN_ROLE);
+
+  AccessControl__grantRole(Verifiers, left<ZswapCoinPublicKey, ContractAddress>(verifier));
 }

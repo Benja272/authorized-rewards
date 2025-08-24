@@ -42,7 +42,9 @@ const MAIN_LOOP_QUESTION = `
 You can do one of the following:
   1. Increment
   2. Display current counter value
-  3. Exit
+  3. Increment 2
+  4. Grant verifier
+  5. Exit
 Which would you like to do? `;
 
 const join = async (providers: CounterProviders, rli: Interface): Promise<DeployedCounterContract> => {
@@ -82,6 +84,13 @@ const mainLoop = async (providers: CounterProviders, rli: Interface): Promise<vo
         await api.displayCounterValue(providers, counterContract);
         break;
       case '3':
+        await api.increment2(counterContract);
+        break;
+      case '4': {
+        const verifier = await rli.question('Enter the verifier (in hex): ');
+        await api.grantVerifier(counterContract, verifier);
+      }
+      case '5':
         logger.info('Exiting...');
         return;
       default:
