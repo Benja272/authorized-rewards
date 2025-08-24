@@ -47,7 +47,8 @@ You can do one of the following:
   4. Display beneficiary data
   5. Own Pub key
   6. Add rewards
-  7. Exit
+  7. Claim rewards
+  8. Exit
 Which would you like to do? `;
 
 const join = async (providers: CounterProviders, rli: Interface): Promise<DeployedCounterContract> => {
@@ -115,7 +116,14 @@ const mainLoop = async (providers: CounterProviders, rli: Interface): Promise<vo
         await api.addRewards(providers, counterContract, coinAmount, rewardsPerBeneficiary, beneficiary);
         break;
       }
-      case '7':
+      case '7': {
+        const coinAmountStr = await rli.question('Enter the coin amount to claim (in decimal): ');
+        const coinAmount = BigInt(coinAmountStr);
+        const sk = await rli.question('Enter your secret key (in hex): ');
+        await api.claimRewards(providers, counterContract, coinAmount, sk);
+        break;
+      }
+      case '8':
         logger.info('Exiting...');
         return;
       default:

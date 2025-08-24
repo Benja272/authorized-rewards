@@ -133,6 +133,25 @@ export const addRewards = async (
   return finalizedTxData.public;
 };
 
+export const claimRewards = async (
+  providers: CounterProviders,
+  counterContract: DeployedCounterContract,
+  coinAmount: bigint,
+  sk: string,
+): Promise<FinalizedTxData> => {
+  logger.info('Claiming rewards...');
+
+  const coinInfo = {
+    color: encodeTokenType(nativeToken()),
+    nonce: randomBytes(32),
+    value: coinAmount,
+  };
+
+  const finalizedTxData = await counterContract.callTx.claimRewards(coinInfo, BigInt(coinAmount));
+  logger.info(`Transaction ${finalizedTxData.public.txId} added in block ${finalizedTxData.public.blockHeight}`);
+  return finalizedTxData.public;
+};
+
 export const grantVerifier = async (
   counterContract: DeployedCounterContract,
   verifier: string,
