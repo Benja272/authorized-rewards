@@ -16,6 +16,7 @@
 pragma language_version >= 0.16 && <= 0.17;
 
 import CompactStandardLibrary;
+import "./AccessControl" prefix AccessControl_;
 
 // public state
 export ledger round: Counter;
